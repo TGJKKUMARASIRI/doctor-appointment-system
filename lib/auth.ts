@@ -1,14 +1,19 @@
-import jwt from 'jsonwebtoken'
+import * as jose from 'jose'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
 
-export function signToken(payload: any) {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
+export async function signToken(payload: any) {
+    return await new jose.SignJWT(payload)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('7d')
+        .sign(JWT_SECRET)
 }
 
-export function verifyToken(token: string) {
+export async function verifyToken(token: string) {
     try {
-        return jwt.verify(token, JWT_SECRET)
+        const { payload } = await jose.jwtVerify(token, JWT_SECRET)
+        return payload
     } catch (error) {
         return null
     }

@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { signToken } from '@/lib/auth'
 import { otpStore } from '../otp-request/route'
+
+export const runtime = 'edge'
 
 export async function POST(req: Request) {
     try {
@@ -38,7 +40,7 @@ export async function POST(req: Request) {
             })
         }
 
-        const token = signToken({ id: patient.id, mobile: patient.mobile, role: 'PATIENT' })
+        const token = await signToken({ id: patient.id, mobile: patient.mobile, role: 'PATIENT' })
 
         const response = NextResponse.json({ message: 'Login successful', user: { id: patient.id, mobile: patient.mobile } })
         response.cookies.set('token', token, {

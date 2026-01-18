@@ -5,8 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
+interface Doctor {
+    id: string
+    name: string
+    specialty: string
+}
+
 export default function DoctorsPage() {
-    const [doctors, setDoctors] = useState([])
+    const [doctors, setDoctors] = useState<Doctor[]>([])
     const [name, setName] = useState("")
     const [specialty, setSpecialty] = useState("")
     const [loading, setLoading] = useState(false)
@@ -93,7 +99,7 @@ export default function DoctorsPage() {
                                 <div className="text-center py-8 text-muted-foreground">No doctors added yet.</div>
                             ) : (
                                 <div className="divide-y">
-                                    {doctors.map((doc: any) => (
+                                    {doctors.map((doc) => (
                                         <div key={doc.id} className="py-4 flex justify-between items-center">
                                             <div>
                                                 <div className="font-medium">{doc.name}</div>

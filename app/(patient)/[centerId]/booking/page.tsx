@@ -6,12 +6,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 
+interface Doctor {
+    id: string
+    name: string
+    specialty: string
+}
+
+interface Slot {
+    id: string
+    time: string
+}
+
 export default function BookingPage() {
     const { centerId } = useParams()
-    const [doctors, setDoctors] = useState([])
+    const [doctors, setDoctors] = useState<Doctor[]>([])
     const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null)
     const [date, setDate] = useState(new Date().toISOString().split("T")[0])
-    const [slots, setSlots] = useState([])
+    const [slots, setSlots] = useState<Slot[]>([])
     const [loading, setLoading] = useState(false)
     const router = useRouter()
 
@@ -73,7 +84,7 @@ export default function BookingPage() {
                         <CardTitle>1. Select Doctor</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {doctors.map((doc: any) => (
+                        {doctors.map((doc) => (
                             <button
                                 key={doc.id}
                                 onClick={() => setSelectedDoctor(doc.id)}
@@ -110,7 +121,7 @@ export default function BookingPage() {
                                         No available slots for this date.
                                     </div>
                                 ) : (
-                                    slots.map((slot: any) => (
+                                    slots.map((slot) => (
                                         <Button
                                             key={slot.id}
                                             variant="outline"

@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import prisma from '@/lib/prisma'
 import { signToken } from '@/lib/auth'
+
 
 export async function POST(req: Request) {
     try {
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
         }
 
-        const token = signToken({ id: center.id, email: center.email, role: 'ADMIN' })
+        const token = await signToken({ id: center.id, email: center.email, role: 'ADMIN' })
 
         const response = NextResponse.json({ message: 'Login successful', user: { id: center.id, name: center.name } })
         response.cookies.set('token', token, {

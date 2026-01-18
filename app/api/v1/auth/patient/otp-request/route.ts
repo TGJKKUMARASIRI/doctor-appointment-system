@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 // In a real app, use Redis or a DB table with expiration
 const otpStore = new Map<string, { otp: string, expires: number }>()
 
-export async function POST(req: Request) {
+export const runtime = 'edge'
+
+export async function POST(req: NextRequest) {
     try {
         const { mobile } = await req.json()
 
