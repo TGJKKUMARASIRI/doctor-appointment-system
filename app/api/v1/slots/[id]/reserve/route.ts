@@ -20,7 +20,7 @@ export async function POST(
 
         const { type, patientMobile, patientName } = await req.json()
 
-        let updateData: any = {
+        const updateData: any = {
             status: type === 'MANUAL' ? 'RESERVED_MANUAL' : 'BOOKED'
         }
 

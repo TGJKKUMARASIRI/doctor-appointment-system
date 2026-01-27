@@ -3,8 +3,7 @@ import prisma from '@/lib/prisma'
 
 
 
-export async function GET(
-    req: NextRequest,
+export async function GET(req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
@@ -16,6 +15,7 @@ export async function GET(
 
         return NextResponse.json(doctors)
     } catch (error) {
+        console.error('Doctor fetch error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

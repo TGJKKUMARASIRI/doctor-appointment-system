@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AdminSlotGrid } from "@/components/AdminSlotGrid"
-import { Calendar, Clock, User, ChevronRight, CircleX } from "lucide-react"
+import { Calendar, Clock, User, CircleX } from "lucide-react"
 import { getLocalTodayString } from "@/lib/utils"
 
 interface Doctor {
@@ -32,7 +32,6 @@ export default function SchedulesPage() {
     const [selectedDoctor, setSelectedDoctor] = useState("")
     const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null)
     const [slots, setSlots] = useState<any[]>([])
-    const [view, setView] = useState<'UPCOMING' | 'PAST'>('UPCOMING')
 
     const [formData, setFormData] = useState({
         doctorId: "",
@@ -50,7 +49,7 @@ export default function SchedulesPage() {
             .then(data => setDoctors(Array.isArray(data) ? data : []))
     }, [])
 
-    const fetchSchedules = async () => {
+    const fetchSchedules = useCallback(async () => {
         const params = new URLSearchParams()
         params.append("date", selectedDate)
         if (selectedDoctor) params.append("doctorId", selectedDoctor)
@@ -60,11 +59,11 @@ export default function SchedulesPage() {
 
         // Split/filter by view (past/upcoming logic can also be backend but here for quick toggle)
         setSchedules(Array.isArray(data) ? data : [])
-    }
+    }, [selectedDate, selectedDoctor])
 
     useEffect(() => {
         fetchSchedules()
-    }, [selectedDate, selectedDoctor])
+    }, [fetchSchedules])
 
     const fetchSlots = async (scheduleId: string) => {
         const res = await fetch(`/api/v1/schedules/${scheduleId}/slots`)

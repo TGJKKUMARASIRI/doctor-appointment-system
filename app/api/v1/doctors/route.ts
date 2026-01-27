@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(doctors)
     } catch (error) {
+        console.error('Doctor fetch error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(doctor)
     } catch (error) {
+        console.error('Doctor creation error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 
-
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
 export async function POST(req: NextRequest) {
     try {
         const now = new Date()
@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ message: 'Reminders processed', count: remindersSent.length })
     } catch (error) {
+        console.error('Reminder processing error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

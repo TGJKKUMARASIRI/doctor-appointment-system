@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { AdminSlotGrid } from "@/components/AdminSlotGrid"
 import { Badge } from "@/components/ui/badge"
-import { Search, User, Calendar } from "lucide-react"
+import { Search, Calendar } from "lucide-react"
 import { getLocalTodayString } from "@/lib/utils"
 
 interface Doctor {

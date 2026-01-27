@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -38,7 +38,23 @@ export default function DoctorConsolePage() {
     const [schedules, setSchedules] = useState<Schedule[]>([])
     const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null)
     const [slots, setSlots] = useState<Slot[]>([])
+    /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
     const [loading, setLoading] = useState(false)
+
+
+
+    const fetchSlots = useCallback(async (scheduleId: string) => {
+        setLoading(true)
+        const res = await fetch(`/api/v1/schedules/${scheduleId}/slots`)
+        const data = await res.json()
+        setSlots(Array.isArray(data) ? data : [])
+        setLoading(false)
+    }, [])
+
+    const handleSelectSchedule = useCallback((schedule: Schedule) => {
+        setActiveSchedule(schedule)
+        fetchSlots(schedule.id)
+    }, [fetchSlots])
 
     // Fetch Today's Schedules
     useEffect(() => {
@@ -52,20 +68,7 @@ export default function DoctorConsolePage() {
                     handleSelectSchedule(list[0]) // Auto-select first
                 }
             })
-    }, [])
-
-    const handleSelectSchedule = (schedule: Schedule) => {
-        setActiveSchedule(schedule)
-        fetchSlots(schedule.id)
-    }
-
-    const fetchSlots = async (scheduleId: string) => {
-        setLoading(true)
-        const res = await fetch(`/api/v1/schedules/${scheduleId}/slots`)
-        const data = await res.json()
-        setSlots(Array.isArray(data) ? data : [])
-        setLoading(false)
-    }
+    }, [handleSelectSchedule])
 
     const updateStatus = async (slotId: string, status: 'SERVING' | 'COMPLETED' | 'NO_SHOW') => {
         try {
@@ -102,7 +105,7 @@ export default function DoctorConsolePage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
                 {/* Left: Schedule List */}
                 <div className="lg:col-span-1 space-y-4 overflow-y-auto pr-2">
-                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Today's Lists</h3>
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Today&apos;s Lists</h3>
                     {schedules.length === 0 && <p className="text-sm text-muted-foreground">No schedules for today.</p>}
                     {schedules.map(schedule => (
                         <div

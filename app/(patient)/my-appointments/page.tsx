@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, MapPin, User } from "lucide-react"
+import { Calendar, Clock } from "lucide-react"
 
 export default function MyAppointmentsPage() {
     const [appointments, setAppointments] = useState<any[]>([])
@@ -135,7 +135,7 @@ function AppointmentCard({ appointment, getStatusColor }: { appointment: any, ge
                         )}
                         {appointment.currentServingToken && appointment.currentServingToken === appointment.slotNumber && (
                             <div className="mt-2 text-center bg-green-500 text-white py-1 rounded text-xs font-bold animate-pulse">
-                                IT'S YOUR TURN!
+                                IT&apos;S YOUR TURN!
                             </div>
                         )}
                     </div>

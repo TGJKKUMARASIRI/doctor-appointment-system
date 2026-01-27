@@ -15,6 +15,7 @@ export async function verifyToken(token: string) {
         const { payload } = await jose.jwtVerify(token, JWT_SECRET)
         return payload
     } catch (error) {
+        console.error('Token verification error:', error)
         return null
     }
 }
