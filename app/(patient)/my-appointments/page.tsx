@@ -27,7 +27,11 @@ export default function MyAppointmentsPage() {
                 setLoading(false)
             }
         }
+
         fetchAppointments()
+        const interval = setInterval(fetchAppointments, 120000) // Poll every 2 minutes
+
+        return () => clearInterval(interval)
     }, [])
 
     const getStatusColor = (status: string) => {
@@ -114,32 +118,42 @@ function AppointmentCard({ appointment, getStatusColor }: { appointment: any, ge
                 </div>
 
                 {/* Live Status */}
-                {appointment.status === 'BOOKED' && (
-                    <div className="mt-4 pt-4 border-t border-dashed">
-                        {appointment.currentServingToken ? (
-                            <div className="flex items-center justify-between">
-                                <div className="text-xs">
-                                    <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Current Token</p>
-                                    <p className="text-xl font-bold text-primary">#{appointment.currentServingToken}</p>
+                {appointment.status === 'BOOKED' && (() => {
+                    const now = new Date()
+                    const appTime = new Date(appointment.time)
+                    const diffMs = appTime.getTime() - now.getTime()
+                    const diffMins = diffMs / (1000 * 60)
+                    const isWithinWindow = diffMins <= 5
+
+                    if (!isWithinWindow && !appointment.currentServingToken) return null
+
+                    return (
+                        <div className="mt-4 pt-4 border-t border-dashed">
+                            {appointment.currentServingToken ? (
+                                <div className="flex items-center justify-between">
+                                    <div className="text-xs">
+                                        <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Current Token</p>
+                                        <p className="text-xl font-bold text-primary">#{appointment.currentServingToken}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Your Token</p>
+                                        <p className="text-xl font-bold">#{appointment.slotNumber}</p>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-muted-foreground uppercase tracking-wider text-[10px]">Your Token</p>
-                                    <p className="text-xl font-bold">#{appointment.slotNumber}</p>
+                            ) : (
+                                <div className="flex items-center space-x-2 text-amber-600 bg-amber-50 p-2 rounded text-xs">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Waiting for doctor to start...</span>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-center space-x-2 text-amber-600 bg-amber-50 p-2 rounded text-xs">
-                                <Clock className="h-4 w-4" />
-                                <span>Waiting for doctor to start...</span>
-                            </div>
-                        )}
-                        {appointment.currentServingToken && appointment.currentServingToken === appointment.slotNumber && (
-                            <div className="mt-2 text-center bg-green-500 text-white py-1 rounded text-xs font-bold animate-pulse">
-                                IT&apos;S YOUR TURN!
-                            </div>
-                        )}
-                    </div>
-                )}
+                            )}
+                            {appointment.currentServingToken && appointment.currentServingToken === appointment.slotNumber && (
+                                <div className="mt-2 text-center bg-green-500 text-white py-1 rounded text-xs font-bold animate-pulse">
+                                    IT&apos;S YOUR TURN!
+                                </div>
+                            )}
+                        </div>
+                    )
+                })()}
                 <div className="pt-2 border-t mt-2 flex justify-between items-center text-xs text-muted-foreground">
                     <span>Slot #{appointment.slotNumber}</span>
                     <span>{medicalCenter.phone}</span>

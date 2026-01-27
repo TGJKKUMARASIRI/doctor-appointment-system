@@ -28,7 +28,12 @@ interface Schedule {
 export default function SchedulesPage() {
     const [doctors, setDoctors] = useState<Doctor[]>([])
     const [schedules, setSchedules] = useState<Schedule[]>([])
-    const [selectedDate, setSelectedDate] = useState(getLocalTodayString())
+    const [startDate, setStartDate] = useState(getLocalTodayString())
+    const [endDate, setEndDate] = useState(() => {
+        const d = new Date()
+        d.setDate(d.getDate() + 7)
+        return d.toISOString().split('T')[0]
+    })
     const [selectedDoctor, setSelectedDoctor] = useState("")
     const [activeSchedule, setActiveSchedule] = useState<Schedule | null>(null)
     const [slots, setSlots] = useState<any[]>([])
@@ -51,15 +56,15 @@ export default function SchedulesPage() {
 
     const fetchSchedules = useCallback(async () => {
         const params = new URLSearchParams()
-        params.append("date", selectedDate)
+        params.append("startDate", startDate)
+        params.append("endDate", endDate)
         if (selectedDoctor) params.append("doctorId", selectedDoctor)
 
         const res = await fetch(`/api/v1/schedules?${params.toString()}`)
         const data = await res.json()
 
-        // Split/filter by view (past/upcoming logic can also be backend but here for quick toggle)
         setSchedules(Array.isArray(data) ? data : [])
-    }, [selectedDate, selectedDoctor])
+    }, [startDate, endDate, selectedDoctor])
 
     useEffect(() => {
         fetchSchedules()
@@ -144,7 +149,7 @@ export default function SchedulesPage() {
             })
             if (res.ok) {
                 alert("Schedule created in DRAFT mode!")
-                if (formData.date === selectedDate) fetchSchedules()
+                if (formData.date === startDate) fetchSchedules()
             }
         } finally {
             setLoading(false)
@@ -245,19 +250,21 @@ export default function SchedulesPage() {
                         <CardHeader className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                             <CardTitle className="text-lg">Browser Schedules</CardTitle>
                             <div className="flex flex-wrap items-center gap-2">
-                                <Button
-                                    variant={selectedDate === getLocalTodayString() ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setSelectedDate(getLocalTodayString())}
-                                >
-                                    Today
-                                </Button>
-                                <Input
-                                    type="date"
-                                    className="w-36 h-8 text-xs"
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                />
+                                <div className="flex items-center space-x-1">
+                                    <Input
+                                        type="date"
+                                        className="w-36 h-8 text-xs"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                    />
+                                    <span className="text-muted-foreground">-</span>
+                                    <Input
+                                        type="date"
+                                        className="w-36 h-8 text-xs"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                    />
+                                </div>
                                 <select
                                     className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs w-36"
                                     value={selectedDoctor}
@@ -297,12 +304,14 @@ export default function SchedulesPage() {
                                                         </div>
                                                         <div className="flex items-center text-xs text-muted-foreground space-x-3">
                                                             <span className="flex items-center">
-                                                                <Clock className="h-3 w-3 mr-1" />
-                                                                {new Date(schedule.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
-                                                                {new Date(schedule.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                <Calendar className="h-3 w-3 mr-1" />
+                                                                {new Date(schedule.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                                             </span>
                                                             <span className="flex items-center">
-                                                                <Calendar className="h-3 w-3 mr-1" />
+                                                                <Clock className="h-3 w-3 mr-1" />
+                                                                {new Date(schedule.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                            <span className="flex items-center font-medium">
                                                                 {schedule.totalSlots} Slots
                                                             </span>
                                                         </div>
@@ -348,7 +357,9 @@ export default function SchedulesPage() {
                                 <CardTitle className="text-lg flex items-center justify-between">
                                     <span>Slots for {activeSchedule.doctor.name}</span>
                                     <div className="flex items-center space-x-2">
-                                        <Badge variant="outline">{selectedDate}</Badge>
+                                        <Badge variant="outline">
+                                            {new Date(activeSchedule.date).toLocaleDateString()}
+                                        </Badge>
                                         <Badge variant={activeSchedule.status === 'PUBLISHED' ? 'default' : 'secondary'}>
                                             {activeSchedule.status}
                                         </Badge>

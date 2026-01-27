@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url)
         const doctorId = searchParams.get('doctorId')
         const dateStr = searchParams.get('date')
+        const startDateStr = searchParams.get('startDate')
+        const endDateStr = searchParams.get('endDate')
 
         const where: any = {
             doctor: {
@@ -25,7 +27,17 @@ export async function GET(req: NextRequest) {
         }
 
         if (doctorId) where.doctorId = doctorId
-        if (dateStr) {
+
+        if (startDateStr && endDateStr) {
+            const start = new Date(startDateStr)
+            start.setHours(0, 0, 0, 0)
+            const end = new Date(endDateStr)
+            end.setHours(23, 59, 59, 999)
+            where.date = {
+                gte: start,
+                lte: end
+            }
+        } else if (dateStr) {
             const date = new Date(dateStr)
             const startOfDay = new Date(date.setHours(0, 0, 0, 0))
             const endOfDay = new Date(date.setHours(23, 59, 59, 999))

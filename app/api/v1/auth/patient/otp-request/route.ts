@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getSmsProvider } from '@/lib/sms'
 
 export async function POST(req: NextRequest) {
     try {
@@ -27,13 +28,11 @@ export async function POST(req: NextRequest) {
             }
         })
 
-        // Mock SMS send
-        console.log(`\n--- MOCK SMS GATEWAY ---`)
-        console.log(`To: ${mobile}`)
-        console.log(`Message: Your OTP for Doctor Appointment System is ${otp}`)
-        console.log(`------------------------\n`)
+        // Send OTP via configured provider
+        const smsProvider = getSmsProvider()
+        await smsProvider.sendSms(mobile, `Your OTP for Doctor Appointment System is ${otp}`)
 
-        return NextResponse.json({ message: 'OTP sent successfully (Check console)' })
+        return NextResponse.json({ message: 'OTP sent successfully' })
     } catch (error) {
         console.error('OTP request error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -22,9 +22,12 @@ export default function BookingPage() {
     const { centerId } = useParams()
     const [doctors, setDoctors] = useState<Doctor[]>([])
     const [selectedDoctor, setSelectedDoctor] = useState<string | null>(null)
-    const [date, setDate] = useState(getLocalTodayString())
+    const [upcomingSchedules, setUpcomingSchedules] = useState<any[]>([])
+    const [selectedSchedule, setSelectedSchedule] = useState<any | null>(null)
     const [slots, setSlots] = useState<Slot[]>([])
     const [loading, setLoading] = useState(false)
+    const [bookingStep, setBookingStep] = useState<1 | 2 | 3>(1)
+    const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' | 'info' } | null>(null)
     const router = useRouter()
 
     useEffect(() => {
@@ -35,17 +38,32 @@ export default function BookingPage() {
         }
     }, [centerId])
 
-    useEffect(() => {
-        if (selectedDoctor && date) {
-            setLoading(true)
-            fetch(`/api/v1/public/doctors/${selectedDoctor}/slots?date=${date}`)
-                .then(res => res.json())
-                .then(data => {
-                    setSlots(Array.isArray(data) ? data : [])
-                    setLoading(false)
-                })
-        }
-    }, [selectedDoctor, date])
+    const handleSelectDoctor = (docId: string) => {
+        setSelectedDoctor(docId)
+        setBookingStep(2)
+        setSelectedSchedule(null)
+        setSlots([])
+        setLoading(true)
+        fetch(`/api/v1/public/doctors/${docId}/schedules`)
+            .then(res => res.json())
+            .then(data => {
+                setUpcomingSchedules(Array.isArray(data) ? data : [])
+                setLoading(false)
+            })
+    }
+
+    const handleSelectSchedule = (schedule: any) => {
+        setSelectedSchedule(schedule)
+        setBookingStep(3)
+        setLoading(true)
+        fetch(`/api/v1/public/schedules/${schedule.id}/slots`)
+            .then(res => res.json())
+            .then(data => {
+                const availableSlots = Array.isArray(data) ? data.filter((s: any) => s.status === 'AVAILABLE') : []
+                setSlots(availableSlots)
+                setLoading(false)
+            })
+    }
 
     const [showAuth, setShowAuth] = useState(false)
     const [authStep, setAuthStep] = useState<1 | 2>(1)
@@ -68,11 +86,11 @@ export default function BookingPage() {
             }
 
             if (res.ok) {
-                alert("Booking successful!")
-                router.push("/my-appointments")
+                setMessage({ text: "Booking successful!", type: "success" })
+                setTimeout(() => router.push("/my-appointments"), 2000)
             } else {
                 const data = await res.json()
-                alert(data.error || "Booking failed")
+                setMessage({ text: data.error || "Booking failed", type: "error" })
             }
         } catch (err) {
             console.error(err)
@@ -91,10 +109,11 @@ export default function BookingPage() {
                 })
                 if (res.ok) {
                     setAuthStep(2)
-                    alert("OTP sent! (Check console)")
+                    setMessage({ text: "OTP sent! (Check console)", type: "info" })
+                    setTimeout(() => setMessage(null), 5000)
                 } else {
                     const data = await res.json()
-                    alert(data.error)
+                    setMessage({ text: data.error, type: "error" })
                 }
             } else {
                 const res = await fetch("/api/v1/auth/patient/otp-verify", {
@@ -104,12 +123,13 @@ export default function BookingPage() {
                 })
                 if (res.ok) {
                     setShowAuth(false)
+                    setMessage({ text: "Verification successful!", type: "success" })
                     if (pendingSlotId) {
                         handleBook(pendingSlotId)
                     }
                 } else {
                     const data = await res.json()
-                    alert(data.error)
+                    setMessage({ text: data.error, type: "error" })
                 }
             }
         } catch (err) {
@@ -126,67 +146,108 @@ export default function BookingPage() {
                 <p className="text-muted-foreground">Select a doctor and available time slot.</p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card>
+            {message && (
+                <div className={`p-4 rounded-lg text-center animate-in fade-in slide-in-from-top-2 duration-300 ${message.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+                        message.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+                            'bg-blue-100 text-blue-800 border border-blue-200'
+                    }`}>
+                    {message.text}
+                </div>
+            )}
+
+            <div className="grid gap-6 md:grid-cols-3">
+                {/* Step 1: Select Doctor */}
+                <Card className={bookingStep !== 1 ? "opacity-50" : ""}>
                     <CardHeader>
-                        <CardTitle>1. Select Doctor</CardTitle>
+                        <CardTitle className="text-lg flex justify-between items-center">
+                            <span>1. Select Doctor</span>
+                            {bookingStep > 1 && <Button variant="ghost" size="sm" onClick={() => setBookingStep(1)}>Change</Button>}
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3">
                         {doctors.map((doc) => (
                             <button
                                 key={doc.id}
-                                onClick={() => setSelectedDoctor(doc.id)}
-                                className={`w-full p-4 rounded-lg border text-left transition-colors ${selectedDoctor === doc.id
-                                    ? "border-primary bg-primary/5 ring-2 ring-primary"
+                                onClick={() => handleSelectDoctor(doc.id)}
+                                disabled={bookingStep !== 1 && selectedDoctor !== doc.id}
+                                className={`w-full p-3 rounded-lg border text-left transition-all ${selectedDoctor === doc.id
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary"
                                     : "hover:bg-accent"
-                                    }`}
+                                    } ${bookingStep !== 1 && selectedDoctor !== doc.id ? "hidden" : ""}`}
                             >
-                                <div className="font-semibold">{doc.name}</div>
-                                <div className="text-sm text-muted-foreground">{doc.specialty}</div>
+                                <div className="font-semibold text-sm">{doc.name}</div>
+                                <div className="text-xs text-muted-foreground">{doc.specialty}</div>
                             </button>
                         ))}
                     </CardContent>
                 </Card>
 
-                <Card>
+                {/* Step 2: Select Schedule */}
+                <Card className={bookingStep < 2 ? "opacity-50" : bookingStep > 2 ? "opacity-50" : ""}>
                     <CardHeader>
-                        <CardTitle>2. Available Slots</CardTitle>
+                        <CardTitle className="text-lg flex justify-between items-center">
+                            <span>2. Upcoming</span>
+                            {bookingStep > 2 && <Button variant="ghost" size="sm" onClick={() => setBookingStep(2)}>Change</Button>}
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Input
-                            type="date"
-                            value={date}
-                            min={getLocalTodayString()}
-                            onChange={(e) => setDate(e.target.value)}
-                        />
-
-                        {loading ? (
-                            <div className="text-center py-8">Loading slots...</div>
-                        ) : selectedDoctor ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                                {slots.length === 0 ? (
-                                    <div className="col-span-3 text-center py-8 text-muted-foreground">
-                                        No available slots for this date.
-                                    </div>
-                                ) : (
-                                    slots.map((slot) => (
-                                        <Button
-                                            key={slot.id}
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleBook(slot.id)}
-                                        >
-                                            {new Date(slot.time).toLocaleTimeString([], {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                            })}
-                                        </Button>
-                                    ))
-                                )}
-                            </div>
+                    <CardContent className="space-y-3">
+                        {bookingStep === 1 ? (
+                            <div className="text-center py-8 text-xs text-muted-foreground italic">Select a doctor first</div>
+                        ) : loading && bookingStep === 2 ? (
+                            <div className="text-center py-8 text-xs">Loading schedules...</div>
+                        ) : upcomingSchedules.length === 0 ? (
+                            <div className="text-center py-8 text-xs text-muted-foreground italic">No upcoming schedules</div>
                         ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                                Please select a doctor first.
+                            upcomingSchedules.map((s) => (
+                                <button
+                                    key={s.id}
+                                    onClick={() => handleSelectSchedule(s)}
+                                    disabled={bookingStep !== 2 && selectedSchedule?.id !== s.id}
+                                    className={`w-full p-3 rounded-lg border text-left transition-all ${selectedSchedule?.id === s.id
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                        } ${bookingStep !== 2 && selectedSchedule?.id !== s.id ? "hidden" : ""}`}
+                                >
+                                    <div className="font-semibold text-sm">
+                                        {new Date(s.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {s.availableSlots} slots left
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Step 3: Select Slot */}
+                <Card className={bookingStep < 3 ? "opacity-50" : ""}>
+                    <CardHeader>
+                        <CardTitle className="text-lg">3. Pick a Time</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {bookingStep < 3 ? (
+                            <div className="text-center py-8 text-xs text-muted-foreground italic">Select a schedule first</div>
+                        ) : loading && bookingStep === 3 ? (
+                            <div className="text-center py-8 text-xs">Loading slots...</div>
+                        ) : slots.length === 0 ? (
+                            <div className="text-center py-8 text-xs text-muted-foreground italic">All slots booked</div>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-2">
+                                {slots.map((slot) => (
+                                    <Button
+                                        key={slot.id}
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs h-9"
+                                        onClick={() => handleBook(slot.id)}
+                                    >
+                                        {new Date(slot.time).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                        })}
+                                    </Button>
+                                ))}
                             </div>
                         )}
                     </CardContent>

@@ -29,7 +29,12 @@ interface Slot {
 export default function ManualBookingPage() {
     const [doctors, setDoctors] = useState<Doctor[]>([])
     const [selectedDoctor, setSelectedDoctor] = useState("")
-    const [selectedDate, setSelectedDate] = useState(getLocalTodayString())
+    const [startDate, setStartDate] = useState(getLocalTodayString())
+    const [endDate, setEndDate] = useState(() => {
+        const d = new Date()
+        d.setDate(d.getDate() + 7)
+        return d.toISOString().split('T')[0]
+    })
     const [schedules, setSchedules] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [activeSchedule, setActiveSchedule] = useState<any>(null)
@@ -45,7 +50,8 @@ export default function ManualBookingPage() {
         setLoading(true)
         try {
             const params = new URLSearchParams()
-            params.append("date", selectedDate)
+            params.append("startDate", startDate)
+            params.append("endDate", endDate)
             if (selectedDoctor) params.append("doctorId", selectedDoctor)
 
             const res = await fetch(`/api/v1/schedules?${params.toString()}`)
@@ -105,12 +111,21 @@ export default function ManualBookingPage() {
                 <CardContent>
                     <div className="flex flex-wrap gap-4 items-end">
                         <div className="space-y-2">
-                            <label className="text-xs font-medium">Date</label>
+                            <label className="text-xs font-medium">Start Date</label>
                             <Input
                                 type="date"
                                 className="w-48"
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium">End Date</label>
+                            <Input
+                                type="date"
+                                className="w-48"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
                             />
                         </div>
                         <div className="space-y-2">
@@ -155,10 +170,15 @@ export default function ManualBookingPage() {
                                             <span>{s.doctor.name}</span>
                                             <Badge variant="outline" className="text-[9px]">{s.doctor.specialty}</Badge>
                                         </div>
-                                        <div className="text-[10px] text-muted-foreground mt-1 flex items-center">
-                                            <Calendar className="h-3 w-3 mr-1" />
-                                            {new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -
-                                            {new Date(s.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        <div className="text-[10px] text-muted-foreground mt-1 flex items-center space-x-2">
+                                            <span className="flex items-center">
+                                                <Calendar className="h-3 w-3 mr-1" />
+                                                {new Date(s.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                            </span>
+                                            <span className="flex items-center">
+                                                <Search className="h-2 w-2 mr-1" />
+                                                {new Date(s.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
                                         </div>
                                     </div>
                                 ))
@@ -172,7 +192,7 @@ export default function ManualBookingPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-sm font-medium">
-                                    Slots for {activeSchedule.doctor.name} on {selectedDate}
+                                    Slots for {activeSchedule.doctor.name} on {new Date(activeSchedule.date).toLocaleDateString()}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
