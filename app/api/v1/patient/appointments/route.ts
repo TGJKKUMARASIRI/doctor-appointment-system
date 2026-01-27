@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
             }
         })
 
-        const enhancedAppointments = await Promise.all(appointments.map(async (appt) => {
+        const enhancedAppointments = await Promise.all(appointments.map(async (appt: any) => {
             const servingSlot = await prisma.slot.findFirst({
                 where: {
                     scheduleId: appt.scheduleId,
